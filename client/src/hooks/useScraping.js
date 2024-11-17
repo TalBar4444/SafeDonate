@@ -4,8 +4,9 @@ import axios from "axios";
 const useScraping = () => {
     const [loadingScraping, setLoadingScraping] = useState(true);
     const [negativeInfo, setNegativeInfo] = useState([]);
+    const [error, setError] = useState(null)
 
-    const fetchScrapedData = async ({ associationNumber, category }) => {
+    const fetchScrapedData = async ({associationName, associationNumber, category }) => {
         try {
             // Check if data is in sessionStorage
             const cacheKey = `scrape_${associationNumber}`;
@@ -21,6 +22,7 @@ const useScraping = () => {
                 const response = await axios.post(
                     "http://localhost:5000/scrape/search",
                     {
+                        associationName,
                         associationNumber,
                         category,
                     }
@@ -36,7 +38,7 @@ const useScraping = () => {
                 }
             }
         } catch (error) {
-            console.error("Failed to fetch or process scraped data:", error);
+            console.error("Failed to fetch or process scraped data:", error.message);
             setError("Error fetching scraping information");
         } finally {
             setLoadingScraping(false); // Ensure loadingScraping is false in all cases

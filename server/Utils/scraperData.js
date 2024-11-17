@@ -40,11 +40,11 @@ const scrapeData = async (associationNumber, category, onScrapedResult) => {
                 return Array.from(document.querySelectorAll(".g")).map((el) => {
                     const titleEl = el.querySelector("h3");  // Titles inside <h3> tags
                     const linkEl = el.querySelector('a');    // Links inside <a> tags
-                    //const contentEl = el.querySelector(".Hdw6tb");  // Snippet/content area
+                    const contentEl = el.querySelector(".Hdw6tb");  // Snippet/content area
                     return {
                         title: titleEl ? titleEl.textContent : "No title found",
                         link: linkEl ? linkEl.href : "No link found",
-                        //content: contentEl ? contentEl.textContent : "No content found"
+                        content: contentEl ? contentEl.textContent : "No content found"
                     };
                 });
             });

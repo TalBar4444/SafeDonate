@@ -1,0 +1,13 @@
+ * Debugger is active!
+ * Debugger PIN: 120-806-121
+https://huggingface.co:443 "GET /api/models/nlptown/bert-base-multilingual-uncased-sentiment/commits/refs%2Fpr%2F15 HTTP/11" 200 6411
+Starting new HTTPS connection (1): safetensors-convert.hf.space:443
+https://safetensors-convert.hf.space:443 "POST /call/run HTTP/11" 200 47
+Starting new HTTPS connection (1): safetensors-convert.hf.space:443
+https://safetensors-convert.hf.space:443 "GET /call/run/ea996c8423ec4b88bbd8330d3c68ee4c HTTP/11" 200 None
+https://huggingface.co:443 "GET /api/models/nlptown/bert-base-multilingual-uncased-sentiment/commits/main HTTP/11" 200 5446
+https://huggingface.co:443 "GET /api/models/nlptown/bert-base-multilingual-uncased-sentiment/discussions?p=0 HTTP/11" 200 9470
+https://huggingface.co:443 "GET /api/models/nlptown/bert-base-multilingual-uncased-sentiment/commits/refs%2Fpr%2F15 HTTP/11" 200 6411
+https://huggingface.co:443 "HEAD /nlptown/bert-base-multilingual-uncased-sentiment/resolve/refs%2Fpr%2F15/model.safetensors.index.json HTTP/11" 404 0
+https://huggingface.co:443 "HEAD /nlptown/bert-base-multilingual-uncased-sentiment/resolve/refs%2Fpr%2F15/model.safetensors HTTP/11" 302 0
+ * Detected change in 'C:\\Users\\raz\\StudioProjects\\SafeDonate\\flask\\filterModel.py', reloading

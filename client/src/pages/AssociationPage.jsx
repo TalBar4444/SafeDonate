@@ -44,8 +44,10 @@ const AssociationPage = () => {
     // Fetch approvals by association number
   useEffect(() => {
     if (association) {
+      const associationName = association["שם עמותה בעברית"]
+      console.log(associationName)
       const category = removeTilde(association["סיווג פעילות ענפי"]);
-      fetchScrapedData({ associationNumber, category });
+      fetchScrapedData({ associationName, associationNumber, category });
     }
   }, [association]);
 

@@ -122,7 +122,7 @@ const removeDuplicates = (results) => {
 };
 
 // Function to scrape Google search results for a given association number and keywords
-const scrapeData = async (associationNumber, category, onScrapedResult) => {
+const scrapeData = async (associationName, associationNumber, category, onScrapedResult) => {
     const results = [];
     let browser;
 
@@ -135,7 +135,7 @@ const scrapeData = async (associationNumber, category, onScrapedResult) => {
         });
 
         for (const keyword of keywords) {
-            const searchQuery = `"${associationNumber}" ${keyword}`;
+            const searchQuery = `${associationName} ${keyword}`;
             //const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
             const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&hl=he`;
             const page = await browser.newPage();

@@ -1,152 +1,81 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const { Readability } = require('@mozilla/readability');
-const { JSDOM } = require('jsdom');
-const { checkCategory, getUserAgent, delay } = require('./scraperUtils.js');
+const { checkCategory, getUserAgent, delay } = require('./scraperUtils')
 
-puppeteer.use(StealthPlugin());
+puppeteer.use(StealthPlugin()); // Enable stealth mode
 
-// Create rate limiter instance
-// Dynamically import `p-limit` to handle the ESM error
-let limit;
-(async () => {
-    const pLimit = (await import('p-limit')).default;
-    limit = pLimit(10); // Set concurrency limit
-})();
-
-// Helper function to clean and prepare text for ML models
-const prepareTextForModels = (text) => {
-    // Remove extra whitespace and normalize
-    text = text.replace(/\s+/g, ' ').trim();
-    // Truncate to 512 tokens (approximate by characters)
-    return text.slice(0, 1500); // ~512 tokens assuming average token is 3 characters
-};
-
-// Helper function to extract content using Readability
-const extractContent = (html) => {
-    const dom = new JSDOM(html);
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
-    return article ? prepareTextForModels(article.textContent) : 'No content found';
-};
-
-// Function to scrape data for a single keyword with retries
-const scrapeKeyword = async (browser, associationNumber, keyword, retries = 2) => {
-    const searchQuery = `"${associationNumber}" ${keyword}`;
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
-    
-    for (let attempt = 0; attempt < retries; attempt++) {
-        const page = await browser.newPage();
-        try {
-            await page.setUserAgent(getUserAgent());
-            await page.goto(searchUrl, { 
-                waitUntil: 'domcontentloaded',
-                timeout: 20000  // Set 20 second timeout here
-            });
-            
-            if (await page.$('form[action="/sorry/index"]')) {
-                console.warn(`CAPTCHA detected for keyword: "${keyword}" (attempt ${attempt + 1}/${retries})`);
-                await delay(2000 * (attempt + 1)); // Exponential backoff
-                continue;
-            }
-
-            const searchResults = await page.evaluate(() => {
-                return Array.from(document.querySelectorAll('.g')).map((el) => ({
-                    title: el.querySelector('h3')?.textContent || 'No title found',
-                    link: el.querySelector('a')?.href || 'No link found',
-                }));
-            });
-
-            await page.close();
-
-            // Process each result with error handling
-            const articles = await Promise.all(
-                searchResults.map((result) =>
-                    limit(async () => {
-                        try {
-                            const articlePage = await browser.newPage();
-                            await articlePage.setUserAgent(getUserAgent());
-                            await articlePage.goto(result.link, { waitUntil: 'domcontentloaded', timeout: 20000 });
-                            
-                            const content = await articlePage.content();
-                            const extractedContent = extractContent(content);
-                            
-                            await articlePage.close();
-                            return {
-                                title: prepareTextForModels(result.title),
-                                link: result.link,
-                                content: extractedContent,
-                                keyword, // Include keyword for context
-                                timestamp: new Date().toISOString(),
-                            };
-                        } catch (error) {
-                            console.error(`Failed to process article ${result.link}:`, error.message);
-                            return null;
-                        }
-                    })
-                )
-            );
-
-            return articles.filter(Boolean); // Filter out failed articles
-        } catch (error) {
-            console.error(`Error scraping keyword "${keyword}" (attempt ${attempt + 1}/${retries}):`, error.message);
-            await page.close();
-        }
-    }
-    return null; // Return null if all retries failed
-};
-
-// Main scraping function
-const scrapeDataa = async (associationNumber, category, onScrapedResult) => {
+// Function to scrape Google search results for a given association number and keywords
+//const scrapeData = async (associationName, associationNumber, category, onScrapedResult) => {
+const scrapeData = async (associationName, category) => {
+    const results = [];
     let browser;
+
+    const keywords = checkCategory(category);
+
     try {
         browser = await puppeteer.launch({
             headless: true,
-            args: [
-                '--disabled-setuid-sandbox',
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--enable-features=NetworkService', // Improved networking
-                '--disable-extensions', // Disable extensions for added security
-            ],
+            args: ["--disabled-setuid-sandbox", "--no-sandbox"],
         });
 
-        const keywords = checkCategory(category);
-        const results = [];
-        
-        // Process keywords in batches to prevent overwhelming
-        const batchSize = 3;
-        for (let i = 0; i < keywords.length; i += batchSize) {
-            const batch = keywords.slice(i, i + batchSize);
-            const batchResults = await Promise.all(
-                batch.map(keyword => 
-                    limit(() => scrapeKeyword(browser, associationNumber, keyword))
-                )
-            );
-            
-            const validResults = batchResults.flat().filter(Boolean);
-            results.push(...validResults);
-            
-            // Notify progress
-            onScrapedResult(validResults);
-            
-            // Add delay between batches
-            if (i + batchSize < keywords.length) {
-                await delay(2000);
-            }
-        }
+        for (const keyword of keywords) {
+            const searchQuery = `"${associationName}" ${keyword}`;
+            const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+            const page = await browser.newPage();
 
-        return results;
+            const userAgent = getUserAgent();
+            await page.setUserAgent(userAgent);
+
+            // Navigate to the Google search page and wait for content to load
+            await page.goto(searchUrl, { waitUntil: "domcontentloaded" });
+
+            const isCaptcha = await page.$('form[action="/sorry/index"]');
+            if (isCaptcha) {
+                console.warn("CAPTCHA detected, skipping this keyword.");
+                await page.close();
+                continue; // Skip this keyword if CAPTCHA is encountered
+            }
+
+            // Scrape the search results from the page
+            const searchResults = await page.evaluate((keyword) => {
+                return Array.from(document.querySelectorAll(".g")).map((el) => {
+                    const titleEl = el.querySelector("h3");  // Titles inside <h3> tags
+                    const linkEl = el.querySelector('a');    // Links inside <a> tags
+                    const contentEl = el.querySelector(".Hdw6tb");  // Snippet/content area
+                    
+                    return {
+                        title: titleEl ? titleEl.textContent : '',
+                        link: linkEl ? linkEl.href : '',
+                        content: contentEl ? contentEl.textContent : '',
+                        keyword: keyword
+                    };
+                });
+            }, keyword);
+
+            //console.log(`Results befor filtering for keyword '${keyword}':`, searchResults);
+
+            // Pass the scraped result for this keyword to the filtering function
+            //onScrapedResult(keyword, searchResults);
+
+             // Add each search result to the main results array
+             results.push(...searchResults);
+
+            // Close the page after each search
+            await page.close();
+
+            // Random delay to mimic human browsing and avoid detection
+            await delay(Math.random() * 2000 + 3000); // Wait between 3-5 seconds
+        }
     } catch (error) {
-        console.error('Fatal error during scraping:', error);
-        throw error; // Rethrow to handle at higher level
+        console.error('Error during scraping:', error);
     } finally {
         if (browser) {
             await browser.close();
-            console.log('Scraping completed');
+            console.log("finish scraping")
         }
     }
+    return results;
 };
 
-module.exports = { scrapeDataa };
+// Run the scraping
+module.exports = { scrapeData }
