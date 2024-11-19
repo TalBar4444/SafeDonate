@@ -57,7 +57,7 @@ const AdvancedSearch = ({ npoData, setFilteredData }) => {
     if (association) {
       navigate(`/AssociationPage/${npoNumber}`);
     } else if (error && showNotFoundError) {
-      setSearchError("לא נמצאה עמותה עם המספר הזה");
+      setSearchError("לא נמצאה עמותה עם המספר שביקשת. אנא ודא כי הקלדת את המספר נכון ונסה שוב.");
     }
   }, [association, error, npoNumber, showNotFoundError]);
 

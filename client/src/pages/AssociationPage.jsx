@@ -19,7 +19,7 @@ const AssociationPage = () => {
   const { loadingAssoc, association, error, fetchAssociation } = useAssociationData();
   const { loading, contactInfo } = useContactInfo(associationNumber);
   const { loadingApprovals, approvals, fetchApprovals } = useApprovals();
-  const { loadingScraping, negativeInfo, fetchScrapedData } = useScraping();
+  const { loadingScraping, negativeInfo, scrapeError, fetchScrapedData } = useScraping();
   
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
@@ -32,8 +32,6 @@ const AssociationPage = () => {
     window.open(`https://www.guidestar.org.il/organization/${associationNumber}`,"_blank");
   const handleDonateClick = () => setIsPopupOpen(true);
   const handleClosePopup = () => setIsPopupOpen(false);
-  //const handleContactClick = () => setIsCardOpen(true);
-
 
   // fetch association Data
   useEffect(() => {
@@ -41,23 +39,14 @@ const AssociationPage = () => {
     fetchApprovals({ associationNumber });
   }, [associationNumber]);
 
-    // Fetch approvals by association number
+  // Fetch scraping data when association data is available or when association number changes
   useEffect(() => {
     if (association) {
       const associationName = association["שם עמותה בעברית"]
-      console.log(associationName)
       const category = removeTilde(association["סיווג פעילות ענפי"]);
       fetchScrapedData({ associationName, associationNumber, category });
     }
-  }, [association]);
-
-//  fetch association Link
-  // useEffect(() => {
-  //     fetchContactInfo({ associationNumber })
-  // }, []);
-
-  const categoryCounts = negativeInfo ? negativeInfo.reduce((total, result) =>
-     total + result.filteredResults.length,0) : 0;
+  }, [association, associationNumber]); // Added associationNumber as dependency
 
   return (
     <div className="main-content">
@@ -95,7 +84,6 @@ const AssociationPage = () => {
                   <ContactCard 
                     isLoading={loading} 
                     contactInfo={Object.keys(contactInfo).length ? contactInfo : null}
-                    // contactInfo={contactInfo} 
                     onClose={() => setIsCardOpen(false)} 
                   />
                 )}
@@ -134,16 +122,22 @@ const AssociationPage = () => {
               <h2 className="negative-info-headline">מידע שנאסף על אמינות העמותה</h2>
               {/* Negative Info Section */}
               {loadingScraping ? (
-                <p>מחפש מידע על העמותה...</p>
-              ) : categoryCounts === 0 ? (
+                <div className="loading-message">
+                  <p>מחפש מידע על העמותה...</p>
+                </div>
+              ) : !negativeInfo ? (
+                <p className="error-message">
+                  לא הצלחנו לאסוף מידע על העמותה. אנא נסה שוב מאוחר יותר.
+                </p>
+              ) : negativeInfo.length === 0 ? (
                 <p className="safe-to-donate-message">
                   לא נמצא כל מידע שלילי על העמותה.
                 </p>
               ) : (
                 <div className="negative-info-summary">
                   <div className="category-header" onClick={handleToggleExpand} style={{ cursor: "pointer" }}>
-                    <p>מצאתי {categoryCounts} קישורים הקשורים לעמותה
-                      {isExpanded ? " ▲" : " ▼"}
+                    <p>נמצאו {negativeInfo.length} תוצאות הקשורות לעמותה
+                      {isExpanded ? " ▼" : " ▲"}
                     </p>
                   </div>
 
@@ -156,18 +150,16 @@ const AssociationPage = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {negativeInfo.map((result, index) =>
-                          result.filteredResults.map((result1, index1) => (
-                            <tr key={index1}>
-                              <td>{result1.title}</td>
-                              <td>
-                                <a href={result1.link} target="_blank" rel="noopener noreferrer">
-                                  קישור
-                                </a>
-                              </td>
-                            </tr>
-                          ))
-                        )}
+                        {negativeInfo.map((item, index) => (
+                          <tr key={index}>
+                            <td>{item.title}</td>
+                            <td>
+                              <a href={item.link} target="_blank" rel="noopener noreferrer">
+                                קישור
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   )}

@@ -1,33 +1,131 @@
-// Filter results where the associationNumber and keyword are found in the title or content
-const processScrapedResults = (keyword, associationName, associationNumber, results) => {
-    const filteredResults = results.filter(result => {
-        const { title, content, link } = result;
-        const isKeywordInTitleOrContent = title.includes(keyword) || content.includes(keyword);
-        const isAssociationInTitleOrContent = title.includes(associationNumber) || content.includes(associationNumber);
-        const isAssociationNameInTitleOrContent = title.includes(associationName) || content.includes(associationName);
+function filterScrapedResults(results, associationName, filterName) {
+  const uniqueResults = [];
+  const seenLinks = new Set();
 
-        // Only approve results where both conditions are true
-        return isKeywordInTitleOrContent && (isAssociationInTitleOrContent || isAssociationNameInTitleOrContent);
-    });
+  // Prepare association name variations for matching
+  const nameToMatch = associationName || filterName;
+  // Filter out words shorter than 2 Hebrew characters
+  const nameWords = nameToMatch.split(' ').filter(word => {
+    const hebrewChars = word.match(/[\u0590-\u05FF]/g);
+    return hebrewChars && hebrewChars.length > 2;
+  });
+  const exactName = nameToMatch.trim();
+  console.log(exactName);
 
-    // console.log(`Results after Filtering for keyword '${keyword}':`, filteredResults);
+  for (const result of results) {
+      let { title, link, content, keyword } = result;
 
-    // Filter out duplicate links using a Set
-    const uniqueLinks = new Set(filteredResults.map(result => result.link));
-    const filteredResultsWithUniqueLinks = filteredResults.filter(result => uniqueLinks.has(result.link));
+      // Skip duplicate links
+      if (seenLinks.has(link)) continue;
 
-    // console.log(`Results after Filtering links for keyword '${keyword}':`, filteredResultsWithUniqueLinks);
+      // Skip Guidestar links
+      if (link.includes('www.guidestar.org.il')) continue;
 
-    // Store the filtered results
-    return {
+      // Clean and normalize text for comparison
+      title = cleanTextForNLP(title);
+      content = cleanTextForNLP(content);
+
+      // Check for exact name match first (considering Hebrew text directionality)
+      const exactMatch = title.includes(exactName) || content.includes(exactName);
+
+      // If no exact match, check for partial matches with minimum word threshold
+      let wordMatchCount = 0;
+      if (!exactMatch) {
+        for (const word of nameWords) {
+          // Only consider Hebrew words
+          if (/[\u0590-\u05FF]/.test(word)) {
+            if (title.includes(word) || content.includes(word)) {
+              wordMatchCount++;
+            }
+          }
+        }
+      }
+
+      // Calculate keyword match score
+      let keywordScore = 0;
+      if (keyword) {
+        // Check for keyword in title (higher weight)
+        if (title.includes(keyword)) {
+          keywordScore += 0.4;
+        }
+        
+        // Check for keyword in content
+        if (content) {
+          // Count keyword occurrences in content
+          const keywordRegex = new RegExp(keyword, 'g');
+          const keywordCount = (content.match(keywordRegex) || []).length;
+          // Add scaled score based on occurrences (max 0.3)
+          keywordScore += Math.min(0.3, keywordCount * 0.1);
+          
+          // Check if keyword appears in first 200 characters (likely more relevant)
+          if (content.substring(0, 200).includes(keyword)) {
+            keywordScore += 0.2;
+          }
+        }
+      }
+
+      // Determine if result should be included based on matching criteria:
+      // 1. Exact match found OR
+      // 2. At least 60% of Hebrew name words found (for longer names) OR
+      // 3. At least 2 Hebrew words found (for shorter names)
+      const minWordMatches = Math.max(2, Math.ceil(nameWords.length * 0.6));
+      const shouldInclude = exactMatch || wordMatchCount >= minWordMatches;
+
+      if (!shouldInclude) continue;
+
+      // Calculate final confidence score combining name matching and keyword relevance
+      const nameMatchScore = exactMatch ? 1 : (wordMatchCount / nameWords.length);
+      const finalConfidence = nameMatchScore * 0.7 + keywordScore * 0.3;
+
+      // Create filtered result object with combined confidence score
+      const filteredResult = {
+        title,
+        link,
+        content,
         keyword,
-        filteredResults: filteredResultsWithUniqueLinks
-    };
+        matchConfidence: finalConfidence
+      };
+
+      uniqueResults.push(filteredResult);
+      seenLinks.add(link);
+  }
+
+  // Sort results by match confidence
+  return uniqueResults.sort((a, b) => b.matchConfidence - a.matchConfidence);
 }
 
-module.exports = { processScrapedResults };
+function filterText(text) {
+  return text
+    .replace(/\(ע~ר\)/g, '') // Remove Hebrew registration mark
+    .replace(/[^a-zA-Z\u0590-\u05FF\s]/g, '') // Keep Hebrew chars, English letters, numbers and spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
+function cleanTextForNLP(text) {
+  if (!text) return '';
+  
+  return text
+    // Remove dates and dashes (common in Hebrew text)
+    .replace(/^[^—]*—\s*/, '')
+    
+    // Handle ellipsis properly - replace with period for sentence ending
+    .replace(/\.{3,}/g, '. ')
+    .replace(/…/g, '. ')
+    
+    // Keep Hebrew chars, English letters, numbers, spaces and essential punctuation
+    .replace(/[^a-zA-Z\u0590-\u05FF\s\.\,\"]/g, ' ')
+    
+    // Remove extra whitespace
+    .replace(/\s+/g, ' ')
+    
+    // Clean up punctuation
+    .replace(/\.+/g, '.')
+    .replace(/\s+\./g, '.')
+    .replace(/\.\s+/g, '. ')
+    
+    // Final trim
+    .trim();
+}
 
-
-
-
+export { filterScrapedResults, filterText };

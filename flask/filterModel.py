@@ -33,82 +33,123 @@ def analyze_relevance(content, association_name, association_number, keyword, re
     relevance_confidence = relevance_result['score'] 
     is_relevance = relevance_result['label'] == 'RELEVANT' and relevance_confidence > relevance_threshold
     return is_relevance, relevance_confidence
-    
-    # relevance_result = relevance_pipeline(content[:512])
-    # relevance_score = relevance_result[0]['score']
-    # relevance_label = relevance_result[0]['label']
-    # is_relevant = relevance_label == 'LABEL_1' and relevance_score > 0.7
-    # return is_relevant
 
 # Function to analyze sentiment
-def analyze_sentiment(content):
-    #result = sentiment_pipeline(content[:512])[0]
-    result = sentiment_pipeline(content)[0]
-    sentiment = result['label']
-    sentiment_confidence = result['score']
-    return sentiment, sentiment_confidence
+def analyze_sentiment(title, content, keyword):
+    # Analyze title sentiment
+    title_result = sentiment_pipeline(title)[0]
+    title_sentiment = title_result['label']
+    title_confidence = title_result['score']
+
+    # Analyze content sentiment if it exists
+    content_sentiment = None
+    content_confidence = 0
+    if content and len(content.strip()) > 0:
+        content_result = sentiment_pipeline(content[:512])[0]
+        content_sentiment = content_result['label'] 
+        content_confidence = content_result['score']
+
+    # If keyword provided, check if it appears in negative contexts
+    keyword_sentiment = None
+    if keyword and content:
+        # Look for keyword in surrounding context
+        keyword_contexts = [s for s in content.split('.') if keyword in s]
+        if keyword_contexts:
+            keyword_result = sentiment_pipeline('. '.join(keyword_contexts))[0]
+            keyword_sentiment = keyword_result['label']
+
+    # Determine overall sentiment
+    # Prioritize negative signals
+    if (title_sentiment == 'Negative' and title_confidence > 0.6) or \
+       (content_sentiment == 'Negative' and content_confidence > 0.6) or \
+       keyword_sentiment == 'Negative':
+        final_sentiment = 'Negative'
+        final_confidence = max(title_confidence, content_confidence)
+    else:
+        final_sentiment = 'Neutral'
+        final_confidence = max(title_confidence, content_confidence)
+
+    return final_sentiment, final_confidence
 
 # Flask route to handle POST requests for analysis
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    data = request.get_json()
-    results = data.get("results", [])
-    association_name = data.get("filterName")
-    association_number = data.get("associationNumber")
-   
-    analysis_results = []
+    try:
+        data = request.get_json()
+        results = data.get("results", [])
+        association_name = data.get("filterName")
+        association_number = data.get("associationNumber")
+        debug_results = []
+        analysis_results = []
 
-    for result in results:
-        title = result['title']
-        content = result.get('content', '')
-        keyword = result['keyword']
+        for result in results:
+            try:
+                title = result['title']
+                content = result.get('content', '')
+                keyword = result['keyword']
 
-        text_to_analyze, analysis_method = process_texts(title, content)
+                # Ensure proper encoding of Hebrew text
+                title = str(title)
+                content = str(content) if content else ''
 
-        # Check relevance using NLP model
-        is_relevance, relevance_confidence = analyze_relevance(text_to_analyze, association_name, association_number, keyword)
+                text_to_analyze, analysis_method = process_texts(title, content)
 
-        # Default values for sentiment
-        sentiment_confidence = 0.0
-        is_negative = False
+                # Debug print with safe encoding
+                print("Sentiment Analysis Results:")
+                print(f"Title: {title.encode('utf-8').decode('utf-8')}")
+                print(f"Content: {content.encode('utf-8').decode('utf-8')}")
+                
+                # Check relevance using NLP model
+                is_relevance, relevance_confidence = analyze_relevance(text_to_analyze, association_name, association_number, keyword)
 
-        sentiment, sentiment_confidence = analyze_sentiment(text_to_analyze)
-        is_negative = sentiment
-        
-        # if is_relevance:
-        #     sentiment, sentiment_confidence = analyze_sentiment(text_to_analyze)
-        #     is_negative = sentiment == 'NEGATIVE'
-        
-     
-        # Append analyzed data
-        analysis_results.append({
-            "title": result['title'],
-            "link": result['link'],
-            "analysis_method": analysis_method,
-            "is_relevance": is_relevance,
-            "relevance_confidence": relevance_confidence,
-            "is_negative": is_negative,
-            "sentiment_confidence": sentiment_confidence,
+                # Get sentiment analysis results
+                sentiment, sentiment_confidence = analyze_sentiment(title, content, keyword)
+                
+                # Print sentiment analysis results for debugging
+                print(f"Sentiment: {sentiment}")
+                print(f"Confidence: {sentiment_confidence}")
+                print("---")
+            
+                # Append all analyzed data for printing
+                debug_results.append({
+                    "title": result['title'],
+                    "link": result['link'],
+                    "content": result['content'],
+                    "analysis_method": analysis_method,
+                    "is_relevance": is_relevance,
+                    "relevance_confidence": relevance_confidence,
+                    "sentiment": sentiment,
+                    "sentiment_confidence": sentiment_confidence,
+                })
+                
+                if sentiment == 'Negative':
+                    analysis_results.append({
+                        "title": result['title'],
+                        "link": result['link'],
+                        "sentiment": sentiment,
+                        "sentiment_confidence": sentiment_confidence,
+                    })
+                        
+            except Exception as e:
+                print(f"Error processing result: {str(e)}")
+                continue  # Skip to next result if there's an error
+
+        # Filter to only negative results for the response
+        debug_results = [res for res in debug_results if res['sentiment'] == 'Negative']
+
+        # Print all analysis results for debugging
+        print("Final Analysis Results:")
+        print({
+            "analysis_results": debug_results,
         })
 
-         # Print each result to verify the values (for debugging)
-        print("Result:", analysis_results[-1])
-     
+        return jsonify({
+            "analysis_results": analysis_results,  # Return only negative results
+        })
 
-    # Determine the final answer based on negative content
-    has_negative_content = any(res['is_negative'] for res in analysis_results if res['is_relevance'])
-    response = "Negative content found" if has_negative_content else "No negative content"
-
-        # Print the analysis results for debugging
-    print({
-        "analysis_results": analysis_results,
-        "response": response,
-    })
-
-    return jsonify({
-        "analysis_results": analysis_results,
-        "response": response,
-    })
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='localhost', port=9000, debug=True)

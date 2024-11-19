@@ -41,7 +41,7 @@ const scrapeData = async (associationName, category) => {
                 return Array.from(document.querySelectorAll(".g")).map((el) => {
                     const titleEl = el.querySelector("h3");  // Titles inside <h3> tags
                     const linkEl = el.querySelector('a');    // Links inside <a> tags
-                    const contentEl = el.querySelector(".Hdw6tb");  // Snippet/content area
+                    const contentEl = el.querySelector(".VwiC3b")
                     
                     return {
                         title: titleEl ? titleEl.textContent : '',
