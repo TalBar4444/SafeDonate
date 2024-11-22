@@ -42,11 +42,11 @@ const AssociationPage = () => {
   // Fetch scraping data when association data is available or when association number changes
   useEffect(() => {
     if (association) {
-      const associationName = association["שם עמותה בעברית"]
+      const associationName = replaceTildesAlgorithm(association["שם עמותה בעברית"])
       const category = removeTilde(association["סיווג פעילות ענפי"]);
       fetchScrapedData({ associationName, associationNumber, category });
     }
-  }, [association, associationNumber]); // Added associationNumber as dependency
+  }, [association]); // Added associationNumber as dependency
 
   return (
     <div className="main-content">
@@ -125,7 +125,11 @@ const AssociationPage = () => {
                 <div className="loading-message">
                   <p>מחפש מידע על העמותה...</p>
                 </div>
-              ) : !negativeInfo ? (
+              ) : scrapeError ? (
+                <p className="error-message">
+                  {scrapeError}
+                </p>
+              ) : negativeInfo === null ? (
                 <p className="error-message">
                   לא הצלחנו לאסוף מידע על העמותה. אנא נסה שוב מאוחר יותר.
                 </p>

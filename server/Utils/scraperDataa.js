@@ -5,8 +5,8 @@ const { checkCategory, getUserAgent, delay } = require('./scraperUtils')
 puppeteer.use(StealthPlugin()); // Enable stealth mode
 
 // Function to scrape Google search results for a given association number and keywords
-//const scrapeData = async (associationName, associationNumber, category, onScrapedResult) => {
-const scrapeData = async (associationName, category) => {
+const scrapeData = async (associationName, filterName, category) => {
+    console.log("Im here");
     const results = [];
     let browser;
 
@@ -19,7 +19,7 @@ const scrapeData = async (associationName, category) => {
         });
 
         for (const keyword of keywords) {
-            const searchQuery = `"${associationName}" ${keyword}`;
+            const searchQuery = `"${associationName}" OR "${filterName}" ${keyword}`;
             const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
             const page = await browser.newPage();
 
@@ -73,6 +73,7 @@ const scrapeData = async (associationName, category) => {
             await browser.close();
             console.log("finish scraping")
         }
+        console.log("Im done");
     }
     return results;
 };
