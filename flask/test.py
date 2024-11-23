@@ -18,6 +18,27 @@ NEGATIVE_LEGAL_TERMS = [
 # List of association variations to check
 association_variations = ['עמותה', 'עמותת', 'ער', 'עמותות', 'לעמותת', 'בעמותת', 'בעמותה', 'העמותה', 'ארגון']
 
+# Sample test data
+test_data = {
+    "results": [
+        {
+            "title": 'ת"פ 61682/12/14 - מדינת ישראל נגד אברהם ישראל',
+            "content": '20 ביולי 2023 — בשנת 2008 או בסמוך לכך, הוקמה עמותת בת בשם "עמותת חזון ישעיה מרכזי חינוך ורווחה", אשר הלכה למעשה נוהלה על ידי הנאשם. יעודה ועיסוקה של העמותה ...',
+            "link": "http://example.com",
+            "keyword": "פירוק"
+        },
+        {
+            "title": 'הפיקוח על מחירי המזון והפיקוח על מחירי מוצרי חלב ...',
+            "content": '... הפרת חוק הפיקוח. במקרים בהן מתקבלות תלונות על מחירי מוצרים שאינם בפיקוח, הן אינן מטופלות במחוזות, כיוון שלמעשה לא מתקיימת הפרה ... ארגון לתת-סיוע הומניטרי ישראלי ...',
+            "link": "http://example2.com", 
+            "keyword": "הפרה"
+        }
+    ],
+    "associationName": 'חזון ישעיה- מרכזי חינוך ורווחה (ע"ר)',
+    "filterName": 'חזון ישעיה- מרכזי חינוך ורווחה',
+    "associationNumber": "580454940"
+}
+
 def remove_hyphens(text):
     # Convert to string if not already
     text = str(text)
@@ -119,7 +140,6 @@ def find_name_positions(text, filter_name):
             print(f"Found match at positions {i} to {end_pos}")
     print(f"Found {len(positions)} matches at positions: {positions}")
     return positions
-
     # Check if filter_name appears near variations of עמותה
 def check_name_near_association(text, association_name, filter_name, name_positions):
     words = text.split()
@@ -202,7 +222,7 @@ def check_term_similarity(test_term, similarity_threshold = 85):
         if similarity > similarity_threshold:
             print(f"Found similar term: '{test_term}' matches '{term}' with {similarity}% similarity")
             return True, similarity
-    return False, 0    
+    return False, 0 
 
 def check_legal_terms_near_name(text_str, name_positions):
     if not name_positions:
@@ -299,21 +319,17 @@ def analyze_sentiment(text, negative_score):
         print(f"Found Positive sentiment in text: {text} with confidence {text_confidence}")
         return False
 
-
-# Flask route to handle POST requests for analysis
-@app.route('/analyze', methods=['POST'])
-def analyze():
+def analyze_results(data):
     try:
-        data = request.get_json()
         results = data.get("results", [])
         association_name = data.get("associationName")
         filter_name = data.get("filterName")
         association_number = data.get("associationNumber")
         relevant_results = []
-        
+
         sentiment_filter_name = remove_hyphens(filter_name)
-        clean_assoc_name = process_snippet_for_relevance(association_name) # remove all irrelevant chars
-        clean_filter_name = process_snippet_for_relevance(filter_name) # remove all irrelevant chars
+        clean_assoc_name = process_snippet_for_relevance(association_name)
+        clean_filter_name = process_snippet_for_relevance(filter_name)
 
         print("\nProcessing results...")
         for result in results:
@@ -322,7 +338,6 @@ def analyze():
                 content = result['content']
                 keyword = result['keyword']
 
-                # Ensure proper encoding of Hebrew text
                 title = str(title) if title else ''
                 content = str(content) if content else ''
 
@@ -365,10 +380,10 @@ def analyze():
                 if legal_terms_score == 0:
                     continue
 
-                total_score =name_score + association_score + legal_terms_score
+                total_score = name_score + association_score + legal_terms_score
                 print(f"Updated score: {total_score}")
 
-                print("Prepering sentiment analysis...")
+                print("Preparing sentiment analysis...")
 
                 title_sentiment = process_snippet_for_sentiment(title)
                 content_sentiment = process_snippet_for_sentiment(content)
@@ -401,18 +416,23 @@ def analyze():
 
             except Exception as e:
                 print(f"Error processing result: {str(e)}")
-                continue  # Skip to next result if there's an error
-        
-        # Sort results by score in descending order
-        relevant_results.sort(key=lambda x: x['relevance_score'], reverse=True)
+                continue
 
+        relevant_results.sort(key=lambda x: x['relevance_score'], reverse=True)
         print(f"\nFound {len(relevant_results)} relevant results")
-        
-        return jsonify({"analyzeResults": relevant_results})
+        return relevant_results
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return []
 
 if __name__ == "__main__":
-    app.run(host='localhost', port=9000, debug=True)
+    # Run analysis on test data
+    results = analyze_results(test_data)
+    print("\nAnalysis Results:")
+    for result in results:
+        print(f"\nTitle: {result['title']}")
+        print(f"Content: {result['content']}")
+        print(f"Keyword: {result['keyword']}")
+        print(f"Score: {result['relevance_score']}")
+        print(f"Sentiment: {result['sentiment_confidence']}")
