@@ -2,6 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/NotFound.css";
 
+/**
+ * NotFound page that displays a message when the page is not found
+ */
 const NotFound = () => {
   const navigate = useNavigate();
 

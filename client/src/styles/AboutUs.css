@@ -17,13 +17,14 @@
     direction: rtl; /* Right-to-left layout for Hebrew */
   }
   
-  h2 {
+  .about-heading {
     font-size: 28px;
     background: linear-gradient(90deg, #00C6FF, #0072FF);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 20px;
+    text-align: center;
   }
   
   .about-text {

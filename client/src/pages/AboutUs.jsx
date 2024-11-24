@@ -1,11 +1,14 @@
 import React from "react";
 import "../styles/AboutUs.css";
 
+/**
+ * AboutUs page that displays information about the latform creators and contact information
+ */
 const AboutUs = () => {
   return (
     <div className="about-page">
       <div className="about-container">
-        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-[#00C6FF] to-[#0072FF] bg-clip-text text-transparent">
+        <h2 className="about-heading">
           קצת עלינו
         </h2>
         <div className="space-y-6">

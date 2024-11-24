@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/NotConnected.css";
 
+/**
+ * NotConnected page that displays a message when the user is not logged in
+ */
 const NotConnected = () => {
     const navigate = useNavigate();
 

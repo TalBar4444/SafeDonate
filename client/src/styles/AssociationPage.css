@@ -83,7 +83,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   background-color: white;
-  color: #4a4a4a;
+  color: #101010;
   font-weight: 500;
   padding: 0.75rem 1.5rem;
   border-radius: 9999px;
@@ -121,34 +121,46 @@ body {
 }
 
 /* Section Headlines */
+.goals-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.goals-icon {
+  font-size: 2rem;
+  color: initial;
+}
+
 .goals-headline {
   font-size: 2rem;
   font-weight: bold;
   text-decoration: underline;
-  color: #1a6bc7;
-  background: linear-gradient(90deg, #1a6bc7, #0c952e);
-  margin-bottom: 20px;
-
+  background: linear-gradient(90deg, #006400, #228B22);
   background-clip: text;
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   padding-top: 10px;
   padding-bottom: 10px;
   border-radius: 10px;
+  margin: 0;
 }
 
 .goals-headline::before {
-  content: "🎯";
-  margin-left: 8px;
+  content: none;
 }
 
 .negative-info-headline {
   font-size: 1.5rem;
   font-weight: bold;
   text-decoration: underline;
-  background: linear-gradient(90deg, #1a6bc7, #0c952e);
+  background: linear-gradient(90deg, #006400, #228B22);
   background-clip: text;
   -webkit-background-clip: text;
-  padding-top: 10px;
+  -webkit-text-fill-color: transparent;
+  padding-top: 30px;
+  margin-bottom: 15px;
 }
 
 /* Content Text */
@@ -156,7 +168,7 @@ body {
   font-size: 1.25rem;
   color: #4a4a4a;
   line-height: 1.6;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 /* Data Tables */
@@ -165,6 +177,9 @@ body {
   border-collapse: collapse;
   margin-top: 15px;
   background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .category-content th,
@@ -172,6 +187,7 @@ body {
   padding: 12px 30px;
   text-align: right;
   border-bottom: 2px solid #e0e0e0;
+  font-size: 1.2rem; /* Increased font size */
 }
 
 .category-content th {
@@ -186,7 +202,7 @@ body {
 
 .category-content td a::before {
   content: "🔗";
-  margin-left: 5px;
+
 }
 
 .category-content td a:hover {
@@ -219,16 +235,19 @@ body {
 /* Approvals Display */
 .approvals-section {
   margin-top: 40px;
+  margin-bottom: 30px;
 }
 
 .approvals-headline {
   font-size: 1.5rem;
   font-weight: bold;
   text-decoration: underline;
-  background: linear-gradient(90deg, #1a6bc7, #0c952e);
+  background: linear-gradient(90deg, #006400, #228B22);
   background-clip: text;
   -webkit-background-clip: text;
-  padding-top: 10px;
+  -webkit-text-fill-color: transparent;
+  padding-top: 30px;
+  margin-bottom: 15px;
 }
 
 .approvals-table {
@@ -242,6 +261,7 @@ body {
   padding: 10px;
   border: 1px solid #e0e0e0;
   text-align: center;
+  font-size: 1.2rem; /* Increased font size */
 }
 
 .approvals-table th {
@@ -253,14 +273,16 @@ body {
 /* Information Categories */
 .negative-info-summary {
   margin-top: 30px;
+  margin-bottom: 30px;
 }
 
 .category-header {
-  font-size: 1rem;
+  font-size: 1.3rem;
   font-weight: bold;
   color: #1a6bc7;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  margin-bottom: 10px;
 }
 
 .category-header:hover {
@@ -405,7 +427,7 @@ body {
 .explanation-text {
   font-size: 1.1rem;
   color: #4a4a4a;
-  background-color: #f9f9f9;
+  background-color: #d9d9d9;
   padding: 15px 20px;
   border: 1px solid #e9ecef;
 
@@ -426,4 +448,9 @@ body {
   content: "💡";
   margin-left: 12px;
   font-size: 1.2rem;
+}
+
+/* Right Section Spacing */
+.right-section > div {
+  margin-bottom: 20px;
 }

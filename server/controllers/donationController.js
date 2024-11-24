@@ -1,6 +1,8 @@
 const Donation = require('../models/donationModel');
 
-// Create a new donation
+/**
+ * Creates a new donation record in the database
+ */
 module.exports.createDonation = async function createDonation(req, res) {
     const { userId, associationName, associationNumber, amount } = req.body;
 
@@ -23,7 +25,9 @@ module.exports.createDonation = async function createDonation(req, res) {
     }
 }
 
-// Get the list of donations made by a user
+/**
+ * Retrieves all donations made by a specific user
+ */
 module.exports.getTotalDonationListOfUser = async function getTotalDonationListOfUser(req, res) {
 
     const userId = req.params.userId;
@@ -41,7 +45,9 @@ module.exports.getTotalDonationListOfUser = async function getTotalDonationListO
     }
 }
 
-// Get the amount of donations made by a user
+/**
+ * Calculates the total amount of donations made by a specific user
+ */
 module.exports.getTotalDonationAmountOfUser = async function getTotalDonationAmountOfUser(req, res) {
     const userId = req.params.userId;
  
@@ -58,8 +64,9 @@ module.exports.getTotalDonationAmountOfUser = async function getTotalDonationAmo
     }
 }
 
-
-// Get Donation List for a specific association
+/**
+ * Retrieves all donations made to a specific association
+ */
 module.exports.getDonationListForAssociation = async function getDonationListForAssociation(req, res) {
 
     const associationNumber = req.params.associationNumber;
@@ -76,7 +83,9 @@ module.exports.getDonationListForAssociation = async function getDonationListFor
     }
 }
 
-// Get the amount of donations for a specific association
+/**
+ * Calculates the total amount of donations made to a specific association
+ */
 module.exports.getDonationAmountForAssociation = async function getDonationAmountForAssociation(req, res) {
 
     const { associationNumber } = req.params;
@@ -99,7 +108,9 @@ module.exports.getDonationAmountForAssociation = async function getDonationAmoun
     }
 }
 
-// Get donations list to a specific association made by a specific user 
+/**
+ * Retrieves all donations made by a specific user to a specific association
+ */
 module.exports.getDonationsByUserForAssociation = async function getDonationsByUserForAssociation(req, res) {
     const { userId, associationNumber } = req.params;
 
@@ -116,8 +127,9 @@ module.exports.getDonationsByUserForAssociation = async function getDonationsByU
     }
 }
 
-
-// Get all donations Data
+/**
+ * Retrieves all donation records from the database
+ */
 module.exports.getAllDonationsData = async function getAllDonationsData(req, res) {
     try {
         const donations = await Donation.find();
@@ -131,7 +143,9 @@ module.exports.getAllDonationsData = async function getAllDonationsData(req, res
     }
 }
 
-// Get all donation amount
+/**
+ * Calculates the total amount of all donations in the database
+ */
 module.exports.getTotalDonationsAmount = async function getTotalDonationsAmount(req, res) {
 
     try {
@@ -151,7 +165,9 @@ module.exports.getTotalDonationsAmount = async function getTotalDonationsAmount(
     }
 }
 
-// Delete all donations
+/**
+ * Deletes all donation records from the database
+ */
 module.exports.deleteAllDonations = async function deleteAllDonations(req, res) {
     
     try {
@@ -161,4 +177,3 @@ module.exports.deleteAllDonations = async function deleteAllDonations(req, res) 
         return res.status(500).json({ message: 'Error deleting all donations', error});
     }
 }
-

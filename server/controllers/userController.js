@@ -1,40 +1,39 @@
 const User = require('../models/userModel.js');
 
-// Get all users
+/**
+ * Retrieves all users from the database
+ */
 module.exports.getAllUsers = async function getAllUsers(req, res) {
   try {
     const users = await User.find({});
     return res.status(200).json({ count: users.length, data: users });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 }
 
-// Get a specific user by ID
+/**
+ * Retrieves a specific user by their ID
+ */
 module.exports.getUserById = async function getUserById(req, res) {
   try {
     const user = await User.findById(req.params.id);
-
     if (!user) return res.status(404).send({ message: 'user not found' });
     return res.status(200).send(user);
-
   } catch (error) {
-    console.error(error.message);
-
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 }
 
-// Check if assocoation exist in the user's favorite list
+/**
+ * Checks if an association exists in user's favorites list
+ */
 module.exports.existUserFavorite = async function existUserFavorite(req, res) {
   const { userId } = req.params;
   const { associationNumber } = req.body;
- 
 
   try {
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
     }
@@ -48,14 +47,14 @@ module.exports.existUserFavorite = async function existUserFavorite(req, res) {
     );
 
     return res.status(200).json({ exists: associationExists });
-
   } catch (error) {
-    console.error(error);
     return res.status(500).send({ message: 'Internal server error', error });
   }
 };
 
-// Update and add assocoation to the user's favorites assocoation list
+/**
+ * Adds an association to user's favorites list
+ */
 module.exports.addUserFavorite = async function addUserFavorite(req, res) {
   const { userId } = req.params;
   const { associationName, associationNumber } = req.body
@@ -76,48 +75,46 @@ module.exports.addUserFavorite = async function addUserFavorite(req, res) {
 
     return res.status(200).json({ message: 'User updated successfully', user });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: 'Internal server error', error });
   }
 }
 
-// Update and remove assocoation from the user's favorite assocoation list
+/**
+ * Removes an association from user's favorites list
+ */
 module.exports.removeUserFavorite = async function removeUserFavorite(req, res) {
   const { userId } = req.params;
   const { associationNumber } = req.body;
 
   try {
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Validate existence of assos in request body
     if (!associationNumber) {
       return res.json({ message: 'Send all required fields' });
     }
 
-    // Update Association array using filter
     user.Association = user.Association.filter(
       (existingAssoc) => existingAssoc.associationNumber !== associationNumber);
 
-    await user.save();  // Save changes to database
+    await user.save();
 
     return res.status(200).json({ message: 'User association removed from favorites' });
   } catch (error) {
-    console.error(error);
     return res.status(500).send({ message: 'Internal server error', error });
   }
 }
 
-// get the favorite associations of the user
+/**
+ * Retrieves all favorite associations for a user
+ */
 module.exports.getFavoriteAssociations = async function getFavoriteAssociations(req, res) {
   const { userId } = req.params;
 
   try {
     const user = await User.findById(userId)
-    
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
     }
@@ -128,17 +125,17 @@ module.exports.getFavoriteAssociations = async function getFavoriteAssociations(
     }));
 
     return res.status(200).json({ favoriteAssociations })
-
   } catch (error) {
     return res.status(500).json({ message: "Error fetching favorite associations", error });
   }
 }
 
-// Remove user from DB
+/**
+ * Deletes a specific user from the database
+ */
 module.exports.deleteUserById = async function deleteUserById(req, res) {
-  const userId = req.params.id;
   try {
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -148,7 +145,9 @@ module.exports.deleteUserById = async function deleteUserById(req, res) {
   }
 };
 
-// Remove all users from DB
+/**
+ * Deletes all users from the database
+ */
 module.exports.deleteAllUsers = async function deleteAllUsers(req, res) {
   try {
     const result = await User.deleteMany({});

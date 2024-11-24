@@ -1,27 +1,36 @@
+/**
+ * Removes Hebrew registration mark (ע"ר) from text and trims whitespace
+ * Used to clean association names
+ */
 function filterText(text) {
-  return text.replace(/\(ע"ר\)/g, '').trim(); // Remove Hebrew registration mark   
+  return text.replace(/\(ע"ר\)/g, '').trim();
 }
 
+/**
+ * Normalizes URLs by removing tracking parameters and cleaning up common patterns
+ * Handles special cases for Telegram links and standardizes URL formats
+ */
 function getNormalizedUrl(url) {
   try {
-    // For telegram links, strip query parameters
     if (url.includes('t.me/')) {
       return url.split('?')[0];
     }
     
-    // For other URLs, keep the full path but clean up common tracking parameters
-    const cleanUrl = url
-      .replace(/^@/, '')  // Remove leading @ if exists
-      .replace(/\/+$/, '') // Remove trailing slashes
-      .replace(/,00\.html$/, '.html'); // Clean up ynet-style endings
-    
-    return cleanUrl;
+    return url
+      .replace(/^@/, '')
+      .replace(/\/+$/, '')
+      .replace(/,00\.html$/, '.html');
   } catch (error) {
     return url;
   }
 }
 
-function filterScrapedResults(results, associationName) {
+/**
+ * Filters and deduplicates scraped search results
+ * Removes duplicates, filters out unwanted sources, and ensures content quality
+ * Returns array of unique, valid results with Hebrew content
+ */
+function filterScrapedResults(results) {
   const uniqueResults = [];
   const seenUrls = new Set();
 
@@ -29,35 +38,22 @@ function filterScrapedResults(results, associationName) {
     const { title, link, content, keyword } = result;
     const normalizedUrl = getNormalizedUrl(link);
 
-    // Skip duplicate normalized URLs or Guidestar/Facebook links
+    // Skip if URL already seen or from excluded sources
     if (seenUrls.has(normalizedUrl) || 
-        link.includes('www.guidestar.org.il') || 
-        link.includes('www.facebook.com')
-    ) {
+        link.includes('guidestar.org.il') || 
+        link.includes('facebook.com')) {
       continue;
     }
 
-    // Skip if title contains only English or numbers
-    const hasHebrewChars = /[\u0590-\u05FF]/.test(title);
-    if (!hasHebrewChars) {
-      continue;
+    // Validate content requirements
+    if (!title || !content || 
+        title.length < 3 || 
+        content.length < 3 ||
+        !/[\u0590-\u05FF]/.test(title)) {
+      continue;  
     }
 
-    if (title.length < 3) {
-      continue;
-    }
-    if (content.length < 3) {
-      continue;
-    }
-
-    const filteredResult = {
-      title,
-      link, 
-      content,
-      keyword
-    };
-
-    uniqueResults.push(filteredResult);
+    uniqueResults.push({ title, link, content, keyword });
     seenUrls.add(normalizedUrl);
   }
 

@@ -1,3 +1,28 @@
+"""
+Flask API for analyzing text content related to associations/NPOs.
+
+This module provides functionality to analyze text content for mentions of associations/NPOs
+and evaluate the sentiment and relevance of those mentions. It uses natural language processing
+and fuzzy string matching to identify associations, legal terms, and analyze sentiment.
+
+Key Features:
+- Text preprocessing and normalization
+- Name and association detection using fuzzy matching
+- Legal term identification near association mentions  
+- Sentiment analysis of relevant text segments
+- Scoring system for relevance based on multiple factors
+
+The API exposes a single endpoint '/analyze' that accepts POST requests with text content
+and returns analysis results including relevance scores and sentiment.
+
+Dependencies:
+- Flask
+- RapidFuzz
+- Transformers
+- Unicodedata
+- Re
+"""
+
 from flask import Flask, request, jsonify
 import re
 from rapidfuzz import fuzz, process
@@ -19,357 +44,205 @@ NEGATIVE_LEGAL_TERMS = [
 association_variations = ['עמותה', 'עמותת', 'ער', 'עמותות', 'לעמותת', 'בעמותת', 'בעמותה', 'העמותה', 'ארגון']
 
 def remove_hyphens(text):
-    # Convert to string if not already
+    """
+    Removes hyphens and normalizes whitespace in text.
+    Returns cleaned text string.
+    """
     text = str(text)
-    # Normalize unicode characters
     text = unicodedata.normalize('NFKC', text)
-    # Remove standalone hyphens surrounded by spaces
     text = re.sub(r'\s+-\s+', ' ', text)
-    # Remove multiple spaces
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
 
 def process_snippet_for_relevance(text):
-    # Convert to string if not already
+    """
+    Processes text for relevance analysis by removing dates, phone numbers,
+    and special characters while preserving meaningful punctuation.
+    Returns cleaned text string.
+    """
     text = str(text)
-    # First normalize unicode characters
     text = unicodedata.normalize('NFKC', text)
-    # Remove common date patterns
-    text = re.sub(r'\d{1,2} ב?([א-ת]+)׳? \d{4}', '', text)  # Matches "21 במאי 2023" and "1 באפר׳ 2023"
-    text = re.sub(r'\d{1,2}/\d{1,2}/\d{2,4}', '', text)      # Matches "05/08/2015"
+    text = re.sub(r'\d{1,2} ב?([א-ת]+)׳? \d{4}', '', text) # Matches "21 במאי 2023" and "1 באפר׳ 2023"
+    text = re.sub(r'\d{1,2}/\d{1,2}/\d{2,4}', '', text) # Matches "05/08/2015"
     text = re.sub(r'\d{1,2}(-|\.)\d{1,2}(-|\.)\d{2,4}', '', text) # Matches "21.05.2023"
-    # Remove phone numbers in various formats
     text = re.sub(r'(?:\+972-?|0)(?:[23489]|5[0-9]|77)-?\d{7}', '', text)  # Israeli phone numbers
-    text = re.sub(r'\d{2,3}-\d{7}', '', text)  # Generic phone format   
-    # Replace 3 dots with rare character ⚡
-    text = re.sub(r'\.{3}', '⚡', text)
-    # Keep only Hebrew letters, English letters, numbers, spaces and our rare character
+    text = re.sub(r'\d{2,3}-\d{7}', '', text) # Generic phone format   
+    text = re.sub(r'\.{3}', '⚡', text) # Replace 3 dots with rare character ⚡
     text = re.sub(r'[^א-תA-Za-z0-9\s⚡]', '', text)
-    # Replace rare character back with single dot
     text = re.sub(r'⚡', '.', text)
-    # Remove multiple spaces
     text = re.sub(r'\s+', ' ', text)  
     return text.strip()
 
-# Remove common date patterns
-def remove_dates(content):   
-    content = re.sub(r'\d{1,2} ב?([א-ת]+)׳? \d{4}', '', content)  # Matches "21 במאי 2023" and "1 באפר׳ 2023"
-    content = re.sub(r'\d{1,2}/\d{1,2}/\d{2,4}', '', content)      # Matches "05/08/2015"
-    content = re.sub(r'\d{1,2}(-|\.)\d{1,2}(-|\.)\d{2,4}', '', content) # Matches "21.05.2023"
-    return content.strip()
+def process_snippet_for_sentiment(text):
+    """
+    Processes text for sentiment analysis by removing dates and normalizing
+    punctuation while preserving sentence structure.
+    Returns cleaned text string.
+    """
+    text = re.sub(r'\d{1,2} ב?([א-ת]+)׳? \d{4}', '', text)
+    text = re.sub(r'\d{1,2}/\d{1,2}/\d{2,4}', '', text)
+    text = re.sub(r'\d{1,2}(-|\.)\d{1,2}(-|\.)\d{2,4}', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    text = unicodedata.normalize('NFKC', text)
+    text = re.sub(r'[^\w\s.,:()א-ת/"׳-]', '', text)
+    text = re.sub(r'\s+-\s+', ' ', text)
+    text = re.sub(r'״', '"', text)
+    text = re.sub(r'׳', "'", text)
+    return ' '.join(text.split()).replace('...', '.')
 
-def reduce_spaces(content):
-    return re.sub(r'\s+', ' ', content).strip()
-
-def normalize_text(content):
-    content = unicodedata.normalize('NFKC', content) # Normalize Unicode (e.g., convert special Hebrew forms)
-    content = re.sub(r'[^\w\s.,:()א-ת/"׳-]', '', content) # Remove special symbols but keep important Hebrew punctuation and hyphens
-    content = re.sub(r'\s+-\s+', ' ', content) # Remove standalone hyphens surrounded by spaces
-    content = re.sub(r'״', '"', content) # Normalize common Hebrew variations
-    content = re.sub(r'׳', "'", content)
-    return content.strip()
-
-def split_sentences(text):
-    # Replace multiple consecutive spaces with a single space
-    text = ' '.join(text.split())
-    text = text.replace('...', '.')
-    return text
-
-def process_snippet_for_sentiment(content):
-    content = remove_dates(content)       # Step 1: Remove dates
-    content = reduce_spaces(content)      # Step 2: Reduce spaces
-    content = normalize_text(content)     # Step 3: Normalize text
-    sentences = split_sentences(content)  # Step 4: Split sentences
-    return sentences
-
-def check_name_in_text(text, name):
-    similarity = fuzz.partial_ratio(name, text)
-    score = (similarity / 100) * 30 if similarity >= 80 else 0
-    print(f"Name match score: {score:.2f}/30, Name: {name}, Text: {text}")
-    return score
 
 def find_name_positions(text, filter_name):
-    """Find all positions where filter_name appears in text, returning positions of first word
-    Args:
-        text (str): Text to search in
-        filter_name (str): Name to search for
-    Returns:
-        list: List of positions (indices) where name appearances start"""
+    """
+    Finds positions of name matches in text using fuzzy string matching.
+    Returns list of tuples containing start and end positions of matches.
+    """
     words = text.split()
-    text_str = ' '.join(words)
     name_words = filter_name.split()
     positions = []
-    print(f"\nSearching for name: {filter_name}")
-    print(f"Text: {text_str}")
+    
     for i in range(len(words)):
         if i + len(name_words) > len(words):
             continue
-        
         potential_match = ' '.join(words[i:i + len(name_words)])
-        similarity = fuzz.ratio(potential_match, filter_name)
-        print(f"Checking position {i}: '{potential_match}' - similarity: {similarity}")
-        if similarity >= 85:
+        if fuzz.ratio(potential_match, filter_name) >= 85:
             end_pos = i + len(name_words) - 1
-            if i < len(words) and words[i][0] == '.':
-                i += 1
-            if end_pos < len(words) and words[end_pos][-1] == '.':
-                end_pos -= 1
             positions.append((i, end_pos))
-            print(f"Found match at positions {i} to {end_pos}")
-    print(f"Found {len(positions)} matches at positions: {positions}")
     return positions
 
-    # Check if filter_name appears near variations of עמותה
+
 def check_name_near_association(text, association_name, filter_name, name_positions):
-    words = text.split()
-    text_str = ' '.join(words)
-
-    print(f"\nChecking name near association...")
-    print(f"Text: {text_str}")
-
-    # First check if (ע"ר) appears right after the name
-    # Check for exact association name or filter name with ע"ר variations
-    if association_name in text_str:
-        print("Found exact match with ע\"ר variation - returning score 40")
+    """
+    Checks if association terms appear near name mentions in text.
+    Returns relevance score based on proximity.
+    """
+    if association_name in text:
         return 40
-
     if not name_positions:
-        print("No name positions found - returning 0")
         return 0
 
-    max_score = 0    
-
-    # Find positions of name matches
-    for name_pos in name_positions:
-        start_pos = name_pos[0]
-        print(f"\nChecking name position: {start_pos}")
-        
-        # Get range of positions before the name to check (up to 5 positions)
+    words = text.split()
+    for start_pos, _ in name_positions:
         check_start = max(0, start_pos - 5)
-        print(f"Checking words from position {start_pos} to {check_start}")
-        
-        # Check words before the name position, starting from closest
         for i in range(start_pos, check_start - 1, -1):
-            # Skip if there's a sentence break between
-            text_between = ' '.join(words[i:start_pos])
-            if '.' in text_between:
-                print(f"Found sentence break between positions {i} and {start_pos} - skipping")
+            if '.' in ' '.join(words[i:start_pos]):
                 continue
-                
-            word = words[i]
-            print(f"Checking word: {word}")
-            
-            # Check for exact matches with association variations
-            if word in association_variations:
-                distance = start_pos - i
-                score = get_score_by_distance(distance)
-                print(f"Found exact match '{word}' at distance {distance} - score: {score}")
-                return score  # Return immediately when finding closest match
-            
-            # Check for similar matches
+            if words[i] in association_variations:
+                return get_score_by_distance(start_pos - i)
             for variation in association_variations:
-                similarity = fuzz.ratio(word, variation)
-                print(f"Checking against variation '{variation}' - similarity: {similarity}")
-                if similarity > 85:
-                    distance = start_pos - i
-                    score = get_score_by_distance(distance)
-                    print(f"Found similar match '{word}' at distance {distance} - score: {score}")
-                    return score  # Return immediately when finding closest match
-
-    print(f"Final association proximity score: {max_score}/40, Name: {filter_name}, Text: {text_str}")
-    return max_score
+                if fuzz.ratio(words[i], variation) > 85:
+                    return get_score_by_distance(start_pos - i)
+    return 0
 
 def get_score_by_distance(distance):
-    if distance == 1:
-        score = 35  # Very close
-        print(f"Very close match (distance=1) - score: 35")
-    elif distance == 2:
-        score = 30  # Close
-        print(f"Close match (distance=2) - score: 30")
-    elif distance <= 4:
-        score = 20  # Moderately close
-        print(f"Moderately close match (distance={distance}) - score: 20")
-    else:
-        score = 10  # Further
-        print(f"Further match (distance={distance}) - score: 10")
-    return score
+    """
+    Calculates relevance score based on word distance.
+    Returns integer score value.
+    """
+    if distance == 1: return 35 # Very close
+    if distance == 2: return 30 # Close
+    if distance <= 4: return 20 # Moderately close
+    return 10 # Further
 
-
-def check_term_similarity(test_term, similarity_threshold = 85):
-    for term in NEGATIVE_LEGAL_TERMS:
-        similarity = fuzz.ratio(test_term.strip(), term.strip())
-        if similarity > similarity_threshold:
-            print(f"Found similar term: '{test_term}' matches '{term}' with {similarity}% similarity")
-            return True, similarity
-    return False, 0    
 
 def check_legal_terms_near_name(text_str, name_positions):
+    """
+    Checks for legal terms appearing near name mentions in text.
+    Returns score if legal terms found, 0 otherwise.
+    """
     if not name_positions:
         return 0
-        
     words = text_str.split()
     
     for start_pos, end_pos in name_positions:
-        print(f"Checking legal terms around name at positions {start_pos}-{end_pos}")
-        
-        # Check before name position
-        check_start = 0
-        for i in range(start_pos - 1, check_start - 1, -1):
-            # Check single word
+        for i in range(start_pos - 1, -1, -1):
             word = words[i]
-            print(f"Checking word before name: {word}")
-            
-            # Check single word matches
-            is_match, similarity = check_term_similarity(word)
-            if is_match:
-                return 25 * (similarity / 100)
-            
-            # Check two-word phrases
-            if i < start_pos - 1:
-                two_word_phrase = f"{word} {words[i+1]}"
-                print(f"Checking phrase before name: {two_word_phrase}")
-                is_match, similarity = check_term_similarity(two_word_phrase)
-                if is_match:
-                    return 25 * (similarity / 100)
-                    
-                # Check three-word phrases
-                if i < start_pos - 2:
-                    three_word_phrase = f"{word} {words[i+1]} {words[i+2]}"
-                    print(f"Checking phrase before name: {three_word_phrase}")
-                    is_match, similarity = check_term_similarity(three_word_phrase)
-                    if is_match:
-                        return 25 * (similarity / 100)
-            
-            # Check for sentence break
-            text_between = ' '.join(words[i:start_pos])
-            if '.' in text_between:
-                print("Found sentence break before name - stopping backward check")
+            for term in NEGATIVE_LEGAL_TERMS:
+                if fuzz.ratio(word.strip(), term.strip()) > 85:
+                    return 25
+            if '.' in ' '.join(words[i:start_pos]):
                 break
-        
-        # Check after name position            
-        for i in range(end_pos + 1, len(words)-2):
-            # Check single word
-            word = words[i].rstrip('.')
-            print(f"Checking word after name: {word}")
-            
-            # Check single word matches
-            is_match, similarity = check_term_similarity(word)
-            if is_match:
-                return 25 * (similarity / 100)
-            
-            # Check two-word phrases
-            two_word_phrase = f"{word} {words[i+1].rstrip('.')}"
-            print(f"Checking phrase after name: {two_word_phrase}")
-            is_match, similarity = check_term_similarity(two_word_phrase)
-            if is_match:
-                return 25 * (similarity / 100)
                 
-            # Check three-word phrases
-            three_word_phrase = f"{word} {words[i+1].rstrip('.')} {words[i+2].rstrip('.')}"
-            print(f"Checking phrase after name: {three_word_phrase}")
-            is_match, similarity = check_term_similarity(three_word_phrase)
-            if is_match:
-                return 25 * (similarity / 100)
-            
-            # Check for sentence break
-            text_between = ' '.join(words[end_pos:i+1])
-            if '.' in text_between:
-                print("Found sentence break after name - stopping forward check")
+        for i in range(end_pos + 1, len(words)):
+            word = words[i].rstrip('.')
+            for term in NEGATIVE_LEGAL_TERMS:
+                if fuzz.ratio(word.strip(), term.strip()) > 85:
+                    return 25
+            if '.' in ' '.join(words[end_pos:i+1]):
                 break
-                    
-    print("No negative legal terms found near name")
     return 0
 
 def analyze_sentiment(text, negative_score):
-    text_result = sentiment_pipeline(text[:512])[0]
-    text_sentiment = text_result['label']
-    text_confidence = text_result['score']
-    print(f"Text sentiment: {text_sentiment} with confidence {text_confidence}")
-
-    if text_sentiment == 'Negative':
-        print(f"Found Negative sentiment in text: {text} with confidence {text_confidence}")
-        return True
-
-    elif text_sentiment == 'Neutral' and negative_score > 0:
-        print(f"Found Neutral sentiment in text: {text} with confidence {text_confidence} but keyword score: {negative_score}") #change it
-        return True
-    
-    else:
-        print(f"Found Positive sentiment in text: {text} with confidence {text_confidence}")
-        return False
-
+    """
+    Analyzes sentiment of text using transformer model.
+    Returns True if sentiment is negative or neutral with negative context.
+    """
+    result = sentiment_pipeline(text[:512])[0]
+    return result['label'] == 'Negative' or (result['label'] == 'Neutral' and negative_score > 0)
 
 # Flask route to handle POST requests for analysis
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    """
+    API endpoint for analyzing text content.
+    Accepts POST request with JSON containing text content and association details.
+    Returns analysis results including relevance scores and filtered content.
+    """
     try:
         data = request.get_json()
         results = data.get("results", [])
         association_name = data.get("associationName")
         filter_name = data.get("filterName")
-        association_number = data.get("associationNumber")
-        relevant_results = []
         
+        # Pre-process names once instead of multiple times
         sentiment_filter_name = remove_hyphens(filter_name)
-        clean_assoc_name = process_snippet_for_relevance(association_name) # remove all irrelevant chars
-        clean_filter_name = process_snippet_for_relevance(filter_name) # remove all irrelevant chars
+        clean_assoc_name = process_snippet_for_relevance(association_name)
+        clean_filter_name = process_snippet_for_relevance(filter_name)
+        
+        relevant_results = []
 
-        print("\nProcessing results...")
         for result in results:
             try:
-                title = result['title']
-                content = result['content']
-                keyword = result['keyword']
+                title = str(result.get('title', ''))
+                content = str(result.get('content', ''))
+                if not title and not content:
+                    continue
 
-                # Ensure proper encoding of Hebrew text
-                title = str(title) if title else ''
-                content = str(content) if content else ''
-
+                # Process text once
                 new_title = process_snippet_for_relevance(title)
                 new_content = process_snippet_for_relevance(content)
 
-                print(f"Title: {new_title}")
-                print(f"Content: {new_content}")
-                print(f"Keyword: {keyword}")
-
-                title_name_score = check_name_in_text(new_title, clean_filter_name)
-                content_name_score = check_name_in_text(new_content, clean_filter_name)
-                name_score = max(title_name_score, content_name_score)
-
-                print(f"title score: {title_name_score}")
-                print(f"content score: {content_name_score}")
-                    
-                if name_score == 0:
-                    continue
-
+                # Check name presence first - if no name found, skip further processing
                 title_name_positions = find_name_positions(new_title, clean_filter_name)
                 content_name_positions = find_name_positions(new_content, clean_filter_name)
+                
                 if not title_name_positions and not content_name_positions:
                     continue
 
+                # Calculate name score only if positions were found
+                title_name_score = 30 if title_name_positions else 0
+                content_name_score = 30 if content_name_positions else 0
+                name_score = max(title_name_score, content_name_score)
+
+                # Check association proximity only if name was found
                 title_association_score = check_name_near_association(new_title, clean_assoc_name, clean_filter_name, title_name_positions)
                 content_association_score = check_name_near_association(new_content, clean_assoc_name, clean_filter_name, content_name_positions)
                 association_score = max(title_association_score, content_association_score)
 
-                print(f"title association score: {title_association_score}")
-                print(f"content association score: {content_association_score}")
-
                 if association_score == 0:
                     continue
 
-                title_legal_terms_score = check_legal_terms_near_name(new_title, title_name_positions) 
+                # Check legal terms only if both name and association were found
+                title_legal_terms_score = check_legal_terms_near_name(new_title, title_name_positions)
                 content_legal_terms_score = check_legal_terms_near_name(new_content, content_name_positions)
                 legal_terms_score = max(title_legal_terms_score, content_legal_terms_score)
-        
+
                 if legal_terms_score == 0:
                     continue
 
-                total_score =name_score + association_score + legal_terms_score
-                print(f"Updated score: {total_score}")
+                total_score = name_score + association_score + legal_terms_score
 
-                print("Prepering sentiment analysis...")
-
+                # Perform sentiment analysis only if all other criteria are met
                 title_sentiment = process_snippet_for_sentiment(title)
                 content_sentiment = process_snippet_for_sentiment(content)
 
@@ -384,30 +257,23 @@ def analyze():
 
                 title_sentiment_result = analyze_sentiment(title_sentiment, title_sentiment_legal_terms_score)
                 content_sentiment_result = analyze_sentiment(content_sentiment, content_sentiment_legal_terms_score)
-                sentiment_confidence = max(title_sentiment_result, content_sentiment_result)
-
+                
                 if not title_sentiment_result and not content_sentiment_result:
                     continue
-            
-                print("-" * 80)
+
                 relevant_results.append({
                     'title': title_sentiment,
                     'link': result['link'],
                     'content': content_sentiment,
                     'keyword': result['keyword'],
                     'relevance_score': total_score,
-                    'sentiment_confidence': sentiment_confidence
                 })
 
             except Exception as e:
                 print(f"Error processing result: {str(e)}")
-                continue  # Skip to next result if there's an error
-        
-        # Sort results by score in descending order
-        relevant_results.sort(key=lambda x: x['relevance_score'], reverse=True)
+                continue
 
-        print(f"\nFound {len(relevant_results)} relevant results")
-        
+        relevant_results.sort(key=lambda x: x['relevance_score'], reverse=True)
         return jsonify({"analyzeResults": relevant_results})
 
     except Exception as e:

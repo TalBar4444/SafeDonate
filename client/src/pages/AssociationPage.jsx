@@ -13,19 +13,34 @@ import "../styles/AssociationPage.css";
 
 import { removeTilde, replaceTildesAlgorithm } from "../utils/filterText.js";
 
+/**
+ * AssociationPage that displays detailed information about a specific association
+ * 
+ * This component handles:
+ * - Fetching and displaying association details
+ * - Contact information management
+ * - Approvals and verification status
+ * - Web scraping for additional info
+ * - Donation recording functionality
+ */
 const AssociationPage = () => {
+  // Get URL params and context
   const { associationNumber } = useParams();
   const { authUser } = useAuthContext();
+
+  // Custom hooks for data fetching
   const { loadingAssoc, association, error, fetchAssociation } = useAssociationData();
   const { loading, contactInfo } = useContactInfo(associationNumber);
   const { loadingApprovals, approvals, fetchApprovals } = useApprovals();
   const { loadingScraping, negativeInfo, scrapeError, fetchScrapedData } = useScraping();
   
+  // Local state management
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
 
+  // Event handlers
   const toggleExplanation = () => setShowExplanation((prev) => !prev);
   const handleToggleExpand = () => setIsExpanded(!isExpanded);
   const handleMoreInfo = () =>
@@ -33,13 +48,13 @@ const AssociationPage = () => {
   const handleDonateClick = () => setIsPopupOpen(true);
   const handleClosePopup = () => setIsPopupOpen(false);
 
-  // fetch association Data
+  // Initial data fetching
   useEffect(() => {
     fetchAssociation({ associationNumber });
     fetchApprovals({ associationNumber });
   }, [associationNumber]);
 
-  // Fetch scraping data when association data is available or when association number changes
+  // Fetch scraping data when association details are available
   useEffect(() => {
     if (association) {
       const associationName = replaceTildesAlgorithm(association["שם עמותה בעברית"])
@@ -53,12 +68,13 @@ const AssociationPage = () => {
       <div className="association-page">
         {!loadingAssoc ? (
           <>
-            {/* Right Section */}
+            {/* Right Section - Contains basic association info and action buttons */}
             <div className="right-section">
               <div className="circle-image">
-                {association["שם עמותה בעברית"]? association["שם עמותה בעברית"].substring(0, 2): "נפ"}
+                {association["שם עמותה בעברית"]? association["שם עמותה בעברית"].substring(0, 2): "ע״ר"}
               </div>
 
+              {/* Basic association details */}
               <div className="npo-name">
                 {replaceTildesAlgorithm(association["שם עמותה בעברית"]) || "שם עמותה לא זמין"}
               </div>
@@ -75,6 +91,7 @@ const AssociationPage = () => {
                 סטטוס עמותה: {association["סטטוס עמותה"] || "סטטוס לא זמין"}
               </div>
 
+              {/* Contact Component */}
               <div>
                 <button className="donate-button" onClick={() => setIsCardOpen(true)}>
                     יצירת קשר
@@ -89,6 +106,7 @@ const AssociationPage = () => {
                 )}
               </div>
 
+              {/* Donation recording Component */}
               <div>
                 <button className="donate-button" onClick={handleDonateClick}>
                   לתיעוד התרומה
@@ -108,19 +126,24 @@ const AssociationPage = () => {
               </button>
             </div>
 
-            {/* Separator Line */}
             <div className="separator"></div>
 
-            {/* Left Section for Goals */}
+            {/* Left Section - Contains detailed association information */}
             <div className="left-section">
-              <h2 className="goals-headline">מטרות העמותה</h2>
+              {/* Association goals section */}
+              <div className="goals-container">
+                <span className="goals-icon">🎯</span>
+                <h2 className="goals-headline">
+                  מטרות העמותה
+                </h2>
+              </div>
               <p className="npo-goals">
                 {replaceTildesAlgorithm(association["מטרות עמותה"]) ||
                   "העמותה טרם שיתפה את מטרותיה. נשמח לעדכן אותך ברגע שיתווסף מידע נוסף."}
               </p>
 
+              {/* Web scraping results section */}
               <h2 className="negative-info-headline">מידע שנאסף על אמינות העמותה</h2>
-              {/* Negative Info Section */}
               {loadingScraping ? (
                 <div className="loading-message">
                   <p>מחפש מידע על העמותה...</p>
@@ -145,6 +168,7 @@ const AssociationPage = () => {
                     </p>
                   </div>
 
+                  {/* Expandable table of negative information */}
                   {isExpanded && (
                     <table className="category-content">
                       <thead>
@@ -170,6 +194,7 @@ const AssociationPage = () => {
                 </div>
               )}
 
+              {/* Approvals section */}
               <div className="approvals-section">
                 <h2 className="approvals-headline">טבלת אישורים</h2>
                 <span className="explanation-text-link" onClick={toggleExplanation}> למה צריך את זה?</span>
@@ -181,6 +206,7 @@ const AssociationPage = () => {
                   </p>
                 )}
 
+                {/* Approvals table */}
                 {loadingApprovals ? (
                   <p>טוען נתוני אישורים...</p>
                 ) : approvals && approvals.length > 0 ? (
@@ -207,9 +233,9 @@ const AssociationPage = () => {
                 )}
               </div>
               
-              {/* Disclaimer Section */}
-              <div className="disclaimer-section bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8 mx-4">
-                <p className="disclaimer-text text-gray-600 text-sm leading-relaxed text-right">
+              {/* Legal disclaimer */}
+              <div className="disclaimer-section bg-gray-50 border border-gray-200 rounded-lg p-8 mt-10 mx-6">
+                <p className="disclaimer-text text-gray-600 text-lg leading-loose text-right">
                   כל המידע המוצג בעמוד זה נאסף ממקורות ציבוריים זמינים ברשת.
                   למרות שאנו משתדלים להציג מידע מדויק ועדכני, אנו לא נושאים
                   באחריות לכל טעות או אי דיוק במידע המוצג. המידע המוצג הינו

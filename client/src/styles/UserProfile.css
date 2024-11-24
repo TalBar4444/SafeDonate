@@ -31,31 +31,6 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* h2 {
-  font-size: 32px;
-  background: linear-gradient(90deg, #00C6FF, #0072FF);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 40px;
-  font-weight: 800;
-  text-align: center;
-  letter-spacing: -0.5px;
-  position: relative;
-} */
-
-/* h2::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, #2B4F71, #45B5AA);
-  border-radius: 2px;
-} */
-
 .user-info {
   margin-bottom: 40px;
   text-align: right;

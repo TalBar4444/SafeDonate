@@ -2,10 +2,18 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
 
+/**
+ * Custom hook to handle user login functionality
+ */
 const useLogin = () => {
 	const [loading, setLoading] = useState(false);
 	const { setAuthUser } = useAuthContext();
 
+	/** Handles the login process
+	 * @param {string} email - User's email
+	 * @param {string} password - User's password
+	 */
+	
 	const login = async (email, password) => {
 		const success = handleInputErrors(email, password);
 		if (!success) return;

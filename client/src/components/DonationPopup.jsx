@@ -3,11 +3,15 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/DonationPopup.css";
 
+/**
+ * Modal component for recording donations to associations
+ */
 const DonationPopup = ({ authUser, association, isOpen, onClose }) => {
   const [loadingDonation, setLoadingDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState("");
   const [error, setError] = useState("");
 
+  // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setDonationAmount("");
@@ -16,10 +20,12 @@ const DonationPopup = ({ authUser, association, isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Validate donation amount
   const handleInputErrors = (value) => {
     return !isNaN(value) && value > 0;
   };
 
+  // Process donation submission
   const handleDonate = async () => {
     const success = handleInputErrors(donationAmount);
     if (!success) {

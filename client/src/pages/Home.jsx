@@ -5,6 +5,9 @@ import AssociationCarousel from "../components/AssociationCarousel";
 import Loading from "../components/Loading";
 import "../styles/Home.css";
 
+/**
+ * Home page that displays a carousel of random associations
+ */
 const Home = ({ setSuggestions, setNpoData }) => {
   const [data, setData] = useState([]); 
   const [randomNPOs, setRandomNPOs] = useState([]);

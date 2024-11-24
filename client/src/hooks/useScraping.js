@@ -1,6 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
+/**
+ * Custom hook to fetch and manage association scraping data
+ */
 const useScraping = () => {
     const [negativeInfo, setNegativeInfo] = useState(null);
     const [loadingScraping, setLoadingScraping] = useState(false);

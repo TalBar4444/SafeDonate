@@ -12,9 +12,8 @@ nav ul li {
   margin-right: 10px;
 }
 
-/* index.css */
 .content {
-  padding-top: 80px; /* Adjust based on the header height */
+  padding-top: 80px;
 }
 
 body {

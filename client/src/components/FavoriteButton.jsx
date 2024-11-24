@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios"
 
+/**
+ * A button component that allows users to add/remove associations to their favorites
+ * Displays different styles and text based on favorite status
+ * Manages favorite state through API calls to the backend
+ */
 const FavoriteButton = ({ association, userId }) => {
   const [favorite, setFavorite] = useState(false);
   const aName = association["שם עמותה בעברית"]
@@ -12,10 +17,7 @@ const FavoriteButton = ({ association, userId }) => {
         const response = await axios.post(`http://localhost:5000/users/updateExist/${userId}`, {
             associationNumber: aNumber
         });
-        const isFavorite = response.data.exists;
-
-        //console.log(`Association "${aNumber}" is ${isFavorite ? 'already a favorite' : 'not a favorite'}`);
-        setFavorite(isFavorite);
+        setFavorite(response.data.exists);
       } catch (error) {
         console.error('Error checking favorite status:', error);
       }
@@ -24,21 +26,18 @@ const FavoriteButton = ({ association, userId }) => {
     checkFavoriteExistence();
   }, []);
 
-
   const handleClick = async () => {
     setFavorite(!favorite);
 
     if (favorite) {
-      const removeFavorite = await axios.put(`http://localhost:5000/users/updateRemove/${userId}`, {
+      await axios.put(`http://localhost:5000/users/updateRemove/${userId}`, {
           associationNumber: aNumber       
       })
-      //console.log(removeFavorite)
     } else {
-      const addFavorite = await axios.put(`http://localhost:5000/users/updateAdd/${userId}`, {
+      await axios.put(`http://localhost:5000/users/updateAdd/${userId}`, {
           associationName: aName, 
           associationNumber: aNumber       
       })
-  
     }
   };
 
@@ -55,7 +54,7 @@ const FavoriteButton = ({ association, userId }) => {
         
       ) : (
         <button
-          className="favorite-button flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-medium py-3 px-6 rounded-full transition-all duration-300 shadow-md hover:shadow-lg border-2 border-gray-300 transform hover:-translate-y-0.5"
+          className="favorite-button flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-[#101010] font-medium py-3 px-6 rounded-full transition-all duration-300 shadow-md hover:shadow-lg border-2 border-gray-300 transform hover:-translate-y-0.5"
           onClick={handleClick}
         >
           <p className="text-lg">הוסף למועדפים</p>
@@ -65,4 +64,5 @@ const FavoriteButton = ({ association, userId }) => {
     </div>
   );
 };
+
 export default FavoriteButton;

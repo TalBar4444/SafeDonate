@@ -2,11 +2,11 @@
 .header {
   position: fixed; /* Makes the header stick to the top */
   top: 0; /* Position it at the very top */
-  width: 100%; /* Make sure it stretches across the page */
+  width: 100%;
   background-color: #fff; /* Set background color */
-  z-index: 1000; /* Ensures the header stays above other elements */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Adds a shadow effect */
-  padding: 15px 20px; /* Adjust padding as needed */
+  z-index: 1000; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+  padding: 15px 20px; 
 }
 
 .header-container {
@@ -19,22 +19,16 @@
   width: 100%;
 }
 
-
-/* Logo */
 .header-title {
-  /* text-decoration: none; */
   display: flex;
   align-items: center;
   gap: 10px;
-  /* white-space: nowrap; */
-  /* margin-left: 10px; */
 }
 
 .header-icon-link,
 .header-logo-link {
   display: flex;
   align-items: center;
-  /* display: inline-flex; Ensures the links don’t break onto separate lines */
 }
 
 .header-icon {
@@ -50,9 +44,6 @@
   height: auto;
   transition: transform 0.3s ease;
   padding-left: 10px;
-  /* height: 60px;
-  width: auto;  */
-  /* block-size: 50px; */
 }
 
 /* Navigation */
@@ -66,7 +57,6 @@
 
 .header-tab {
   margin-left: 50px;
-  /* padding: 20px 20px; */
   color: #007bff;
   border: none;
   background: none;
@@ -76,10 +66,8 @@
 }
 
 .header-tab:hover {
-  /* color: darkblue; */
   color: #0056b3;
   border-bottom: 2px solid #0056b3;
-  /* border-bottom: 2px solid darkblue; Visual feedback with underline */
 }
 
 /* Search bar wrapper */
@@ -115,7 +103,6 @@
   z-index: 1000;
   max-height: 200px;
   overflow-y: auto;
-  /* width: 750px; */
 }
 
 .suggestion-item {
@@ -127,19 +114,6 @@
 .suggestion-item:hover {
   background-color: #f0f0f0;
 }
-
-/* Responsive design */
-/* @media (max-width: 768px) {
-  .header-logo {
-    height: 60px; 
-  }
-  .header-tab {
-    font-size: 14px;
-  }
-  .search-bar {
-    width: 300px;
-  }
-} */
 
 /* Profile section */
 .profile-circle {

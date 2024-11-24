@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+/**
+ * Custom hook to fetch and manage association details with caching support
+ */
 const useAssociationData = () => {
     const [association, setAssociation] = useState(null);
     const [loadingAssoc, setLoadingAssociation] = useState(true);
@@ -36,7 +39,6 @@ const useAssociationData = () => {
                     const associationData = response.data.result.records[0];
                     sessionStorage.setItem(cacheKey, JSON.stringify(associationData));
                     setAssociation(associationData);
-                    //setLoadingAssociation(false);
                 } else {
                     setError("לא נמצאה עמותה");
                 }

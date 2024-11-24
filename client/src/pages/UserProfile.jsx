@@ -6,6 +6,9 @@ import "../styles/UserProfile.css";
 import { useAuthContext } from "../context/AuthContext";
 import useLogout from "../hooks/useLogout";
 
+/**
+ * UserProfile page that displays user profile, information and actions
+ */
 const UserProfile = () => {
   const { userId } = useParams();
   const [donations, setDonations] = useState([]);
@@ -24,7 +27,11 @@ const UserProfile = () => {
           );
 
           if (donationsResponse.status === 200) {
-            setDonations(donationsResponse.data || []);
+            // Sort donations by newest first
+            const sortedDonations = [...donationsResponse.data].sort((a, b) => 
+              new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setDonations(sortedDonations || []);
           } else {
             console.log("No donations found");
           }
@@ -38,7 +45,9 @@ const UserProfile = () => {
           );
 
           if (favoritesResponse.status === 200) {
-            setFavorites(favoritesResponse.data.favoriteAssociations);
+            // Sort favorites by newest first
+            const sortedFavorites = [...favoritesResponse.data.favoriteAssociations].reverse();
+            setFavorites(sortedFavorites);
           } else {
             console.log("No favorite associations found");
           }
@@ -187,11 +196,11 @@ const UserProfile = () => {
                 </div>
               ) : (
                 <div className="text-center p-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 mb-4">עדיין לא ביצעת תרומות</p>
+                  <p className="text-xl font-medium text-gray-700 mb-4">עדיין לא ביצעת תרומות</p>
                   <button
                     onClick={() => navigate("/")}
-                    className="bg-[#0072FF] text-white px-6 py-3 rounded-full font-medium hover:bg-[#00C6FF] transition-colors"
-                  >
+                    className="bg-[#0072FF] text-white px-4 py-2 rounded-full text-lg font-medium hover:bg-[#00C6FF] transition-colors"
+                  >        
                     התחלו לתרום
                   </button>
                 </div>
@@ -228,10 +237,10 @@ const UserProfile = () => {
                 </div>
               ) : (
                 <div className="text-center p-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 mb-4">אין עמותות מועדפות</p>
+                  <p className="text-xl font-medium text-gray-700 mb-4">אין עמותות מועדפות</p>
                   <button
                     onClick={() => navigate("/advanced-Search")}
-                    className="bg-[#0072FF] text-white px-6 py-3 rounded-full font-medium hover:bg-[#00C6FF] transition-colors"
+                    className="bg-[#0072FF] text-white px-4 py-2 rounded-full text-lg font-medium hover:bg-[#00C6FF] transition-colors"
                   >
                     חפשו עמותות להוסיף
                   </button>

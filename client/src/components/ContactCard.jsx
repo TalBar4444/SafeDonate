@@ -1,5 +1,8 @@
 import React from 'react';
 
+/**
+ * Modal component that displays contact information for an association
+ */
 const ContactCard = ({
   mainTitle = 'יצירת קשר',
   subtitle = 'מידע רשמי',

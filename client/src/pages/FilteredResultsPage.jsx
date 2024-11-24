@@ -4,6 +4,9 @@ import { useAuthContext } from "../context/AuthContext";
 import AssociationCarousel from "../components/AssociationCarousel";
 import "../styles/FilteredResultsPage.css";
 
+/**
+ * FilteredResultsPage that displays filtered association results
+ */
 const FilteredResultsPage = () => {
   const location = useLocation();
   const { authUser } = useAuthContext();

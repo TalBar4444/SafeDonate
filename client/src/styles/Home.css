@@ -1,5 +1,4 @@
 .home {
-  /* background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('./assets/bkg1.jpg'); */
   background-image: url('../assets/bg.jpg');
   background-size: cover;
   background-position: center;

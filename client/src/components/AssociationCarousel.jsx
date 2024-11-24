@@ -1,7 +1,9 @@
 import AssociationCard from "./AssociationCard";
-// import { cleanText } from "../utils/textUtil";
 
-const AssociationCrusel = ({ dataList, userId }) => {
+/**
+ * Carousel component displaying a grid of association cards with hover effects
+ */
+const AssociationCarousel = ({ dataList, userId }) => {
     return (
         <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -22,4 +24,4 @@ const AssociationCrusel = ({ dataList, userId }) => {
     );
 };
 
-export default AssociationCrusel;
+export default AssociationCarousel;

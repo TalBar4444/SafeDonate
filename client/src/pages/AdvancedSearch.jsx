@@ -1,21 +1,56 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAssociationData from "../hooks/useAssociationData.js";
+import useCategories from "../hooks/useCategories.js";
 import "../styles/AdvancedSearch.css";
 
-const AdvancedSearch = ({ npoData, setFilteredData }) => {
+/**
+ * AdvancedSearch page that allows users to search for associations by category or number
+ */
+const AdvancedSearch = () => {
   const [activeTab, setActiveTab] = useState("קטגוריות");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [npoNumber, setNpoNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [showNotFoundError, setShowNotFoundError] = useState(false);
-  const categories = Array.from(
-    new Set(npoData.map((npo) => npo["סיווג פעילות ענפי"]))
-  ).sort((a, b) => a.localeCompare(b, "he"));
+  const [npoData, setNpoData] = useState([]);
+  const [error1, setError] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  
 
+
+  
   const navigate = useNavigate();
   const { loadingAssoc, association, error, fetchAssociation } = useAssociationData();
+  const { loadingCategories, categories, fetchCategories } = useCategories();
+
+  const fetchAssociationData = async () => {
+    try {
+      const response = await fetch(
+        "https://data.gov.il/api/3/action/datastore_search?resource_id=be5b7935-3922-45d4-9638-08871b17ec95"
+      );
+      const jsonData = await response.json();
+      const activeData = jsonData.result.records.filter(
+        (association) =>
+          association["סטטוס עמותה"] === "רשומה" ||
+          association["סטטוס עמותה"] === "פעילה"
+      );
+
+      
+      setNpoData(activeData);
+    } catch (error) {
+      setError(error.toString());
+      console.error("Error fetching association data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    fetchAssociationData();
+  }, []);
 
   const handleCategoryClick = (category) => {
     setSelectedCategories(prev => {
@@ -29,13 +64,16 @@ const AdvancedSearch = ({ npoData, setFilteredData }) => {
     });
   };
 
+
   const handleCategorySearch = () => {
     const filteredNPOs = npoData.filter((npo) =>
       selectedCategories.includes(npo["סיווג פעילות ענפי"])
     );
+
     setFilteredData(filteredNPOs);
+    
     navigate("/filtered-results", {
-      state: { filteredNPOs, selectedCategories },
+      state: { filteredNPOs, selectedCategories}
     });
   };
 
@@ -128,19 +166,23 @@ const AdvancedSearch = ({ npoData, setFilteredData }) => {
         <div className="content-container h-[400px] flex items-start justify-center">
           {activeTab === "קטגוריות" ? (
             <div className="bubble-buttons flex flex-wrap justify-center gap-4">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  className={`bubble-button px-6 py-3 rounded-full border ${
-                    selectedCategories.includes(category)
-                      ? "bg-[#1e3c72] text-white border-transparent"
-                      : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-200"
-                  } focus:outline-none transition-all duration-200 hover:shadow-md transform hover:scale-105`}
-                  onClick={() => handleCategoryClick(category)}
-                >
-                  {category}
-                </button>
-              ))}
+              {loadingCategories ? (
+                <p>טוען קטגוריות...</p>
+              ) : (
+                categories.map((category) => (
+                  <button
+                    key={category}
+                    className={`bubble-button px-6 py-3 rounded-full border ${
+                      selectedCategories.includes(category)
+                        ? "bg-[#1e3c72] text-white border-transparent"
+                        : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    } focus:outline-none transition-all duration-200 hover:shadow-md transform hover:scale-105`}
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    {category}
+                  </button>
+                ))
+              )}
             </div>
           ) : (
             <div className="npo-number-input w-full px-4 flex flex-col items-center">

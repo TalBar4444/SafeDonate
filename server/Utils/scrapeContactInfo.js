@@ -1,22 +1,23 @@
 const puppeteer = require('puppeteer');
 const cheerio = require("cheerio");
 
+/**
+ * Scrapes contact information for an association from Guidestar website
+ * Extracts website, email, phone numbers and address if available
+ * Returns object with available contact details
+ */
 const fetchContactInfo = async (associationNumber) => {
     const url = `https://www.guidestar.org.il/organization/${associationNumber}/contact`;
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
     try {
-        // Navigate to page and wait for content to load
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-        
-        // Wait for main content container
         await page.waitForSelector('.malkar-contact-section', { timeout: 5000 }).catch(() => null);
         
         const data = await page.content();
         const $ = cheerio.load(data);
 
-        // Extract contact info
         const websiteLink = $(".malkar-contact-web .malkar-contact-section a[href^='http']").first().attr("href");
         const emailLink = $(".malkar-contact-info .malkar-contact-detail a[href^='mailto']").first().attr("href");
         
@@ -35,7 +36,6 @@ const fetchContactInfo = async (associationNumber) => {
 
         await browser.close();
 
-        // Build contact info object, only including fields with valid data
         const contactInfo = {};
 
         if (websiteLink && websiteLink.startsWith('http')) {
@@ -54,7 +54,6 @@ const fetchContactInfo = async (associationNumber) => {
             contactInfo.address = fullAddress;
         }
 
-        // Return the contact info even if only some fields are populated
         return contactInfo;
 
     } catch (error) {

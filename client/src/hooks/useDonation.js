@@ -2,8 +2,10 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
 
+/**
+ * Custom hook to handle donation functionality including validation and submission
+ */
 const useDonation = () => {
-    //const [showModal, setShowModal] = useState(false);
     const [loadingDonation, setLoadingDonation] = useState(false);
     const [donationType, setDonationType] = useState("חד פעמי");
     const [donationAmount, setDonationAmount] = useState("");

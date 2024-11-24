@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import useSignup from "../hooks/useSignup";
 import "../styles/Signup.css";
 
+/**
+ * Signup page that allows users to create a new account
+ */
 const Signup = () => {
   const [inputs, setInputs] = useState({
     firstName: "",

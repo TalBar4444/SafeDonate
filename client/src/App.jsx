@@ -74,7 +74,7 @@ const App = () => {
         <Route
           path={ROUTES.ASSOCIATION_PAGE}
           element={
-            authUser ? <AssociationPage /> : <Navigate to="/not-connected" />
+            authUser ? <AssociationPage /> : <Navigate to={ROUTES.NOT_CONNECTED} />
           }
         />
         <Route
@@ -87,7 +87,7 @@ const App = () => {
         />
         <Route
           path={ROUTES.PROFILE}
-          element={authUser ? <UserProfile /> : <Navigate to="/login" />}
+          element={authUser ? <UserProfile /> : <Navigate to={ROUTES.LOGIN} />}
         />
         <Route path={ROUTES.ABOUT_US} element={<AboutUs />} />
     
@@ -95,9 +95,9 @@ const App = () => {
           path={ROUTES.ADVANCED_SEARCH}
           element={
             <AdvancedSearch
-              npoData={npoData}
-              setFilteredData={setFilteredData}
-            />
+              // npoData={npoData}
+              // setFilteredData={setFilteredData}
+              />
           } 
         />
         <Route

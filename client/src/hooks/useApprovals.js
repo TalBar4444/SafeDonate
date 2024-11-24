@@ -1,6 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 
+/**
+ * Custom hook to fetch and manage association approval data from the government API
+ */
 const useApprovals = () => {
     const [approvals, setApprovals] = useState([]);
     const [loadingApprovals, setLoadingApprovals] = useState(true);

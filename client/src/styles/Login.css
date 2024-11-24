@@ -60,7 +60,7 @@ input::placeholder {
 }
 
 .login-button:hover {
-  background-color: #2f7bbf; /* Slightly darker on hover */
+  background-color: #2f7bbf;
 }
 
 /* Signup redirect section */

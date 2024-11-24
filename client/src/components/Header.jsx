@@ -8,6 +8,14 @@ import logo from "../assets/logo.png";
 import icon from "../assets/icon-header.png";
 import profileIcon from "../assets/user-profile-icon.png";
 
+/**
+ * Header component that displays the main navigation bar
+ * Contains search functionality with autocomplete suggestions
+ * Handles user authentication status and navigation
+ * Provides quick access to main site features
+ */
+
+
 const Header = ({ handleLogin }) => {
   const navigate = useNavigate();
   const searchBarRef = useRef(null);
@@ -51,13 +59,6 @@ const Header = ({ handleLogin }) => {
   const handleInputChange = (e) => {
     setSearchInput(e.target.value);
     debouncedSearch(e.target.value);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      navigate(`/search?query=${searchInput}`);
-      setShowSuggestions(false);
-    }
   };
 
   const handleSuggestionClick = (suggestionId) => {
@@ -112,7 +113,6 @@ const Header = ({ handleLogin }) => {
               className="search-bar"
               value={searchInput}
               onChange={handleInputChange}
-              // onKeyPress={handleKeyPress}
             />
 
             {showSuggestions && (

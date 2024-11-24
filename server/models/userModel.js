@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+/**
+ * Schema for user records in MongoDB
+ * Stores user profile information including name, email, password
+ * Contains array of favorite associations with their details
+ * Automatically adds timestamps for created/updated dates
+ */
 const userSchema = mongoose.Schema(
   {
     firstName: {
@@ -7,7 +13,7 @@ const userSchema = mongoose.Schema(
       required: true,
     },
     lastName: {
-      type: String,
+      type: String, 
       required: true,
     },
     email: {
@@ -15,7 +21,7 @@ const userSchema = mongoose.Schema(
       required: true,
       unique: true,
     },
-    password:{
+    password: {
       type: String,
       required: true,
       minlength: 4,
@@ -24,11 +30,9 @@ const userSchema = mongoose.Schema(
       {
         associationName: {
           type: String,
-          required: false,
         },
         associationNumber: {
           type: Number,
-          required: false,
         },
       }
     ],
